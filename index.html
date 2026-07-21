@@ -125,14 +125,57 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background: white; /* 搭配白光背景 */
+            background-color: #ffffff; /* ★ 確保容器有純白背景，填滿整個螢幕 */
+            overflow: hidden; /* 防止圖片放大時超出邊界 */
         }
         
         #final-key-visual img {
-            max-width: 90%;
-            max-height: 90%;
-            object-fit: contain;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* 保持圖片比例，剩餘空間會顯示容器的純白背景 */
+            transform: scale(1);
+            will-change: transform, opacity, filter;
+        }
+
+        /* 演職人員名單 (Credits) */
+        #credits-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 95;
+            pointer-events: none;
+            display: none;
+            overflow: hidden;
+            font-family: 'Noto Serif TC', serif;
+            /* ★ 增加上下漸層遮罩，讓名單有如從黑暗中浮現、消散的電影感 */
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+        }
+        #credits-content {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            color: #EEE;
+        }
+        .credits-title {
+            font-size: 2rem;
+            letter-spacing: 0.5em;
+            margin-bottom: 5rem;
+            color: #ff3333;
+            font-weight: 900;
+        }
+        .credit-group {
+            margin-bottom: 3rem;
+        }
+        .credit-role {
+            font-size: 1rem;
+            color: #888;
+            letter-spacing: 0.3em;
+            margin-bottom: 0.5rem;
+        }
+        .credit-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
         }
 
         /* 掃描線特效 */
@@ -180,6 +223,69 @@
     <!-- 主視覺圖片 -->
     <div id="final-key-visual">
         <img src="1.png" alt="2026 臺北藝穗節 主視覺" onerror="this.onerror=null; this.src='https://placehold.co/1920x1080/ffffff/111111?text=2026+Taipei+Fringe+Festival+Key+Visual';">
+    </div>
+
+    <!-- 演職人員名單 (Credits) -->
+    <div id="credits-screen">
+        <div id="credits-content">
+            <h2 class="credits-title">演職人員名單</h2>
+            <div class="credit-group">
+                <div class="credit-role">編⠀⠀⠀劇</div>
+                <div class="credit-name">林珈儀</div>
+            </div>
+            <div class="credit-group">
+                <div class="credit-role">導⠀⠀⠀演</div>
+                <div class="credit-name">林珈儀</div>
+            </div>
+            <div class="credit-group">
+                <div class="credit-role">執行製作</div>
+                <div class="credit-name">呂穎薰</div>
+            </div>
+            <div class="credit-group">
+                <div class="credit-role">舞台監督</div>
+                <div class="credit-name">陳雅均</div>
+            </div>
+            <div class="credit-group">
+                <div class="credit-role">行政經理</div>
+                <div class="credit-name">林心惟</div>
+            </div>
+            <div class="credit-group">
+                <div class="credit-role">互動設計</div>
+                <div class="credit-name">廖冠皓</div>
+            </div>
+            <div class="credit-group">
+                <div class="credit-role">展覽策劃</div>
+                <div class="credit-name">廖冠皓、李柏翰</div>
+            </div>
+            <div class="credit-group">
+                <div class="credit-role">行銷宣傳</div>
+                <div class="credit-name">林心惟</div>
+            </div>
+            <div class="credit-group">
+                <div class="credit-role">文宣設計</div>
+                <div class="credit-name">Anjan</div>
+            </div>
+            <div class="credit-group">
+                <div class="credit-role">妝造設計</div>
+                <div class="credit-name">葉相吟</div>
+            </div>
+            <div class="credit-group">
+                <div class="credit-role">燈光設計</div>
+                <div class="credit-name">林孝丞</div>
+            </div>
+            <div class="credit-group">
+                <div class="credit-role">燈光執行</div>
+                <div class="credit-name">林書丞</div>
+            </div>
+            <!-- 結尾的演員名單拉大間距，並加上底部留白，讓動畫滾動結束得更自然 -->
+            <div class="credit-group" style="margin-top: 5rem; margin-bottom: 40vh;">
+                <div class="credit-role">演⠀⠀⠀員</div>
+                <div class="credit-name" style="line-height: 1.8;">
+                    王韋鈞、吳佩錡、呂穎薰<br>徐瑞宏、曾語潔、蕭靜瑩<br>
+                    <span style="font-size: 0.9rem; color: #666; font-weight: 300; display: block; margin-top: 10px;">（依姓氏筆劃排序）</span>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script type="module">
@@ -342,10 +448,29 @@
             }, "-=8");
 
 
-            // --- Phase 4: 白光與主視覺 (神聖感) ---
+            // --- Phase 4: 白光與主視覺 (平整、神聖感) ---
             // 在洪流快結束前，白光開始緩慢吞噬
-            tl.to("#flash-bang", { opacity: 1, duration: 4, ease: "power2.inOut" }, "-=4") 
-              .to("#final-key-visual", { opacity: 1, duration: 4, ease: "power2.inOut" }, "-=1"); // 主視覺更緩慢地浮現
+            tl.to("#flash-bang", { opacity: 1, backgroundColor: "#ffffff", duration: 4, ease: "power2.inOut" }, "-=4") 
+              .to("#final-key-visual", { opacity: 1, duration: 4, ease: "power2.inOut" }, "-=1"); 
+
+            // --- Phase 5: 謝幕與演職人員名單 (Cinematic Roll) ---
+            // 讓主視覺在白底上停留 3 秒，然後背景轉為深邃的黑色。
+            // 主視覺變暗、稍微模糊且「極其緩慢地放大」作為背景，營造電影結尾的深沈與呼吸感。
+            tl.to("#final-key-visual", { backgroundColor: "#000000", duration: 3, ease: "power2.inOut" }, "+=3")
+              .to("#flash-bang", { backgroundColor: "#000000", duration: 3, ease: "power2.inOut" }, "<")
+              .to("#final-key-visual img", { 
+                  opacity: 0.12, 
+                  scale: 1.15, 
+                  filter: "blur(3px)", 
+                  duration: 35, 
+                  ease: "none" 
+              }, "<") 
+              .set("#credits-screen", { display: "block" }, "-=2")
+              .fromTo("#credits-content",
+                  { y: "100vh" }, // 從螢幕正下方外側開始
+                  { y: "-100%", duration: 35, ease: "none" }, // 勻速往上滾動 35 秒，直到穿過螢幕
+                  "<"
+              );
         }
 
         // 自訂 GSAP text 效果
