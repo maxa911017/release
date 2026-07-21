@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系統覆寫：解放協議</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Noto+Serif+TC:wght@300;700;900&display=swap');
+        
+        body {
+            background-color: #050505;
+            color: #EEE;
+            font-family: 'Courier Prime', 'Noto Serif TC', monospace;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            /* 將游標設定為紙飛機圖示 */
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="%23ff3333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>') 0 0, auto;
+        }
+
+        /* 開場按鈕 */
+        #start-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            background: radial-gradient(circle at center, #1a0000 0%, #000 70%); /* 增加神祕感背景 */
+        }
+
+        .cyber-btn {
+            background: transparent;
+            border: 2px solid #ff3333;
+            color: #ff3333;
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            font-family: 'Courier Prime', monospace;
+            letter-spacing: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.3s;
+            box-shadow: 0 0 10px rgba(255, 51, 51, 0.2);
+            /* 讓按鈕也有紙飛機游標 */
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>') 0 0, pointer;
+        }
+        .cyber-btn:hover {
+            background: #ff3333;
+            color: #000;
+            box-shadow: 0 0 40px rgba(255, 51, 51, 0.8);
+            transform: scale(1.05);
+        }
+
+        /* 終端機文字 */
+        #terminal {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3vw;
+            color: #ff3333;
+            text-align: center;
+            z-index: 50;
+            white-space: pre-wrap;
+            width: 90%;
+            opacity: 0;
+            text-shadow: 0 0 15px rgba(255,51,51,0.8); /* 增強文字光暈 */
+        }
+
+        /* 警告閃爍層 (新增：製造恐慌感) */
+        #alert-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(255, 0, 0, 0.3);
+            z-index: 40;
+            opacity: 0;
+            pointer-events: none;
+            mix-blend-mode: overlay;
+        }
+
+        /* 影像容器 */
+        #gallery-container {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-content: center;
+            gap: 2px;
+            padding: 10px;
+            box-sizing: border-box;
+            z-index: 10;
+            perspective: 600px; /* ★ 修改：調小 perspective 讓 3D 變形更誇張 */
+            transform-style: preserve-3d;
+        }
+
+        .subject-img {
+            width: 6vw; /* 稍微縮小，讓數量看起來更多 */
+            height: 6vw;
+            object-fit: cover;
+            /* 初始狀態：死板、壓抑、像檔案庫，加入高斯模糊準備被「震醒」 */
+            filter: grayscale(100%) contrast(250%) sepia(50%) brightness(0.4) blur(2px); 
+            opacity: 0;
+            border: 1px solid rgba(255,255,255,0.1);
+            transform: translateZ(-500px); /* ★ 修改：初始推得更深，營造深淵感 */
+            box-shadow: inset 0 0 10px #000;
+        }
+
+        /* 最終的光芒與主視覺 */
+        #flash-bang {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: white;
+            z-index: 80;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #final-key-visual {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 90;
+            opacity: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: white; /* 搭配白光背景 */
+        }
+        
+        #final-key-visual img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+        }
+
+        /* 掃描線特效 */
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.3));
+            background-size: 100% 4px;
+            z-index: 999;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+        
+        /* 螢幕雜訊 */
+        .noise {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 998;
+            opacity: 0.08;
+            background-image: url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
+        }
+    </style>
+</head>
+<body>
+    <!-- 音效元素 (預設隱藏且不自動播放，等待互動) -->
+    <audio id="bgm" src="1.mp3"></audio>
+
+    <div class="scanlines" id="scanlines"></div>
+    <div class="noise" id="noise"></div>
+    <div id="alert-overlay"></div> <!-- 新增：紅色警報層 -->
+
+    <div id="start-screen">
+        <button id="start-btn" class="cyber-btn">
+            Initiate Release Protocol<br>
+            <span class="text-sm font-sans tracking-widest mt-2 block opacity-70">啟動最高權限解密</span>
+        </button>
+    </div>
+
+    <div id="terminal"></div>
+    <div id="gallery-container"></div>
+
+    <div id="flash-bang"></div>
+    
+    <!-- 主視覺圖片 -->
+    <div id="final-key-visual">
+        <img src="1.png" alt="2026 臺北藝穗節 主視覺" onerror="this.onerror=null; this.src='https://placehold.co/1920x1080/ffffff/111111?text=2026+Taipei+Fringe+Festival+Key+Visual';">
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // ==========================================
+        // 替換為你的 Firebase Config
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyD8ERvnrdHJzTAr7xDIdXuiqZ9o7d_wW_U",
+            authDomain: "checkpoint-system-ee6d7.firebaseapp.com",
+            projectId: "checkpoint-system-ee6d7",
+            storageBucket: "checkpoint-system-ee6d7.firebasestorage.app",
+            messagingSenderId: "188995102122",
+            appId: "1:188995102122:web:6d8ef558b8c9f6262bf7d3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let subjects = [];
+        const gallery = document.getElementById('gallery-container');
+        const startBtn = document.getElementById('start-btn');
+        const bgm = document.getElementById('bgm');
+
+        async function fetchRecords() {
+            startBtn.innerHTML = "Establishing Connection...<br><span class='text-sm mt-2 block'>正在連線至機密主機...</span>";
+            startBtn.disabled = true;
+            try {
+                const querySnapshot = await getDocs(collection(db, "archived_subjects"));
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    if (data.imageData) {
+                        subjects.push(data.imageData);
+                    }
+                });
+
+                // 為了視覺極致震撼，複製資料確保畫面「爆滿」 (約需 100-150 張圖)
+                while (subjects.length < 120 && subjects.length > 0) {
+                    subjects = subjects.concat(subjects).slice(0, 120);
+                }
+
+                subjects.forEach((imgBase64) => {
+                    const img = document.createElement('img');
+                    img.src = imgBase64;
+                    img.className = 'subject-img';
+                    gallery.appendChild(img);
+                });
+
+                startBtn.innerHTML = "OVERRIDE SYSTEM<br><span class='text-sm mt-2 block'>[ 執行強制解放協議 ]</span>";
+                startBtn.disabled = false;
+
+            } catch (error) {
+                console.error("讀取失敗：", error);
+                startBtn.innerHTML = "<span class='text-red-500'>[ DATA CORRUPTED ]</span>";
+            }
+        }
+
+        fetchRecords();
+
+        startBtn.addEventListener('click', () => {
+            bgm.play().catch(e => console.log("音樂播放被阻擋", e));
+            
+            gsap.to("#start-screen", { 
+                opacity: 0, 
+                duration: 0.3, // 更快的切入
+                onComplete: () => {
+                    document.getElementById('start-screen').style.display = 'none';
+                    startAnimationSequence();
+                }
+            });
+        });
+
+        function startAnimationSequence() {
+            const tl = gsap.timeline();
+            const images = gsap.utils.toArray('.subject-img');
+            const terminal = document.getElementById('terminal');
+
+            // --- Phase 1: 駭入與血色警告 (極短但高壓) ---
+            // 結合了第二版的節奏，但加入了強烈的紅色閃爍
+            tl.set(terminal, { opacity: 1 })
+              .to("#alert-overlay", { opacity: 0.8, duration: 0.2, yoyo: true, repeat: 7, ease: "steps(1)" }, 0) // 閃爍紅燈
+              .to(terminal, { duration: 1, text: "ACCESSING DEEP ARCHIVE...", ease: "none" }, 0)
+              .to(terminal, { duration: 0.8, text: "CRITICAL WARNING:\nCONTAINMENT BREACH", ease: "none", color: "#ff0000", scale: 1.2 }, "+=0.2")
+              .to(terminal, { duration: 0.1, opacity: 0, yoyo: true, repeat: 3 })
+              .to(terminal, { duration: 0.5, opacity: 1, scale: 2.5, color: "#fff", text: "ALL CELLS: UNLOCKED", ease: "power4.out" })
+              .to(terminal, { duration: 0.5, opacity: 0, scale: 5, ease: "power2.in" }); // 字幕衝破螢幕
+
+            // --- Phase 2: 檔案庫現身與「收縮吸力」 (The Implosion) ---
+            // 先讓圖片在深淵中浮現，並帶有恐怖的低頻震動
+            tl.to(images, {
+                opacity: 0.8,
+                filter: "grayscale(100%) contrast(300%) sepia(80%) brightness(0.2) blur(0px)", // 瞬間清晰但極度壓抑
+                z: () => gsap.utils.random(-800, -300), // 在深處排開
+                duration: 2,
+                stagger: { amount: 2, from: "random" }, 
+                ease: "power2.out"
+            }, "-=0.5");
+
+            // ★ 震撼核心：爆炸前的「收縮」
+            tl.to("#gallery-container", {
+                scale: 0.8, // 整個空間往後縮
+                rotationZ: () => gsap.utils.random(-5, 5), // 空間扭曲
+                duration: 3, // 憋氣 3 秒
+                ease: "power1.in"
+            }, "-=2");
+
+            // 長達 3 秒的「開門前的高頻震動」
+            tl.to("body", {
+                x: () => gsap.utils.random(-15, 15),
+                y: () => gsap.utils.random(-15, 15),
+                rotation: () => gsap.utils.random(-1, 1),
+                duration: 0.05,
+                repeat: 60, // 3 秒高頻震動
+                yoyo: true,
+                ease: "rough({ template: none.out, strength: 3, points: 50, taper: 'in', randomize: true, clamp: false })"
+            }, "-=3");
+
+
+            // --- Phase 3: 核爆級釋放 (The Liberation) - 保留你喜歡的超長洪流 ---
+            tl.to(["#scanlines", "#noise", "#alert-overlay"], { opacity: 0, duration: 0.5 }, "-=0.2");
+
+            // ★ 震撼核心：空間「暴衝」向觀眾
+            tl.to("#gallery-container", {
+                scale: 2.5, // 空間急遽放大
+                rotationZ: 0,
+                duration: 10, // 配合長釋放時間
+                ease: "power2.out"
+            }, "-=0.2");
+
+            // 照片如彈片般瘋狂射出，長達 10 秒的洪流
+            tl.to(images, {
+                filter: "grayscale(0%) contrast(120%) sepia(0%) brightness(1.5)", // 恢復色彩並過曝
+                scale: () => gsap.utils.random(8, 25), // 放大倍率極端化，有些會超級巨大
+                rotationX: () => gsap.utils.random(-720, 720), // ★ 瘋狂 3D 翻滾
+                rotationY: () => gsap.utils.random(-720, 720),
+                rotationZ: () => gsap.utils.random(-360, 360),
+                x: () => gsap.utils.random(-1500, 1500), // ★ 射出範圍極大，砸出場外
+                y: () => gsap.utils.random(-1000, 1000),
+                z: () => gsap.utils.random(800, 3000), // ★ 衝刺極深，穿透觀眾
+                opacity: 0,
+                duration: 6, // 單張飛行時間拉長，更有過程感
+                stagger: {
+                    amount: 10, // ★ 總共花 10 秒將所有照片如機關槍般發射完 (保留第二版精華)
+                    from: "center", // 從中心炸開
+                    grid: "auto"
+                },
+                ease: "expo.in" // ★ 啟動慢，結尾極度暴衝 (像子彈出膛)
+            }, "-=10"); // 與空間暴衝同步開始
+
+            // 在洪流中段，加入一次「破窗」般的極大震動
+            tl.to("body", {
+                x: () => gsap.utils.random(-50, 50),
+                y: () => gsap.utils.random(-50, 50),
+                duration: 0.03,
+                repeat: 20,
+                yoyo: true,
+                ease: "rough({ strength: 10 })"
+            }, "-=8");
+
+
+            // --- Phase 4: 白光與主視覺 (神聖感) ---
+            // 在洪流快結束前，白光開始緩慢吞噬
+            tl.to("#flash-bang", { opacity: 1, duration: 4, ease: "power2.inOut" }, "-=4") 
+              .to("#final-key-visual", { opacity: 1, duration: 4, ease: "power2.inOut" }, "-=1"); // 主視覺更緩慢地浮現
+        }
+
+        // 自訂 GSAP text 效果
+        gsap.registerEffect({
+            name: "text",
+            effect: (targets, config) => {
+                let text = config.text;
+                let obj = { length: 0 };
+                return gsap.to(obj, {
+                    length: text.length,
+                    duration: config.duration,
+                    ease: "none",
+                    onUpdate: function() {
+                        targets[0].innerText = text.substring(0, Math.floor(obj.length));
+                    }
+                });
+            },
+            extendTimeline: true,
+        });
+
+    </script>
+</body>
+</html>
